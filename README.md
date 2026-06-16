@@ -9,7 +9,7 @@ An informational AI assistant for chemical/process engineers that maps Aspen Plu
 - [x] Read-only KB query tools (Sprint 2) — lookup_category, list_items, get_item_detail, search_items
 - [x] Resilient model layer with free-model fallback (Sprint 3) — primary→fallback routing, ADK LiteLlm model object
 - [x] ADK agent assembly (Sprint 4) — LlmAgent + 4 KB tools + grounding instructions
-- [ ] Streamlit messenger UI (Sprint 5)
+- [x] Streamlit messenger UI (Sprint 5) — messenger-style chat with seed prompts, citations, model badge
 - [ ] Full Ch.3–16 equipment catalog (Sprint 6)
 
 ## Architecture
@@ -65,7 +65,7 @@ cp .env.example .env
 | `DB_PATH` | SQLite database path | `data/icarus_kb.sqlite` |
 | `PDF_PATH` | Icarus reference PDF path | `AspenIcarusV15_Ref.pdf` |
 
-## Running (available after Sprint 5)
+## Running
 
 ```bash
 streamlit run ui/app.py
@@ -96,7 +96,7 @@ pytest tests/ -v
 | 2 | KB query tools | ✅ Complete |
 | 3 | Resilient model layer | ✅ Complete (live --probe pending your API keys) |
 | 4 | ADK agent assembly | ✅ Complete (live integration tests require API quota) |
-| 5 | Streamlit messenger UI | 🔲 Pending |
+| 5 | Streamlit messenger UI | ✅ Complete |
 | 6 | Full Ch.3–16 catalog | 🔲 Pending |
 
 ## References
