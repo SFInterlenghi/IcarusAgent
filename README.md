@@ -1,2 +1,107 @@
 # IcarusAgent
-Agent for Icarus comunication
+
+An informational AI assistant for chemical/process engineers that maps Aspen Plus/HYSYS simulation blocks to exact equipment models, design bounds, item symbols, and configuration rules in the Icarus Evaluation Engine (IEE) database.
+
+## Current Capabilities
+
+- [x] Project scaffold and config spine (Sprint 0)
+- [ ] PDF → SQLite ETL for Chapter 2 Agitators (Sprint 1)
+- [ ] Read-only KB query tools (Sprint 2)
+- [ ] Resilient model layer with free-model fallback (Sprint 3)
+- [ ] ADK agent assembly (Sprint 4)
+- [ ] Streamlit messenger UI (Sprint 5)
+- [ ] Full Ch.3–16 equipment catalog (Sprint 6)
+
+## Architecture
+
+```
+User (Streamlit UI)
+    │
+    ▼
+ADK LlmAgent (root_agent.py)
+    │
+    ├── model_layer.py ──► OpenRouter Llama-3-70B free (primary)
+    │                  └─► Google Gemini Flash (fallback on 429/5xx)
+    │
+    └── tools.py ──────► SQLite KB (icarus_kb.sqlite)
+                              │
+                    ETL pipeline (etl/)
+                              │
+                    AspenIcarusV15_Ref.pdf
+```
+
+## Setup
+
+### Prerequisites
+
+- Python 3.11+
+- `AspenIcarusV15_Ref.pdf` in the project root
+
+### Install
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### Configure
+
+```bash
+cp .env.example .env
+# Edit .env with your keys:
+#   OPENROUTER_API_KEY — from openrouter.ai (free account)
+#   GOOGLE_API_KEY     — from Google AI Studio (unbilled Pro key)
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `OPENROUTER_API_KEY` | OpenRouter API key (free tier) | *(required)* |
+| `GOOGLE_API_KEY` | Google AI Studio key (unbilled) | *(required)* |
+| `PRIMARY_MODEL` | Primary LLM slug | `openrouter/meta-llama/llama-3-70b-instruct:free` |
+| `FALLBACK_MODEL` | Fallback LLM slug | `gemini/gemini-flash-latest` |
+| `DB_PATH` | SQLite database path | `data/icarus_kb.sqlite` |
+| `PDF_PATH` | Icarus reference PDF path | `AspenIcarusV15_Ref.pdf` |
+
+## Running (available after Sprint 5)
+
+```bash
+streamlit run ui/app.py
+```
+
+## Building the Knowledge Base (available after Sprint 1)
+
+```bash
+# Chapter 2 only (PoC)
+python -m etl.load_sqlite --chapter 2
+
+# Full catalog (Sprint 6)
+python -m etl.load_sqlite --chapter 2-16
+```
+
+## Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+## Sprint Status
+
+| Sprint | Objective | Status |
+|---|---|---|
+| 0 | Scaffolding & config | ✅ Complete |
+| 1 | ETL: PDF → SQLite (Ch.2) | 🔲 Pending |
+| 2 | KB query tools | 🔲 Pending |
+| 3 | Resilient model layer | 🔲 Pending |
+| 4 | ADK agent assembly | 🔲 Pending |
+| 5 | Streamlit messenger UI | 🔲 Pending |
+| 6 | Full Ch.3–16 catalog | 🔲 Pending |
+
+## References
+
+- [Implementation Blueprint](ROADMAP.md)
+- [KB Schema](docs/data_schema.md)
+- [Model Routing Policy](docs/model_routing.md)
+- Aspen Icarus V15 Reference Guide (PDF, 1,492 pages)
