@@ -4,24 +4,23 @@ import sys
 from pathlib import Path
 import fitz  # PyMuPDF
 
-# 1-indexed, inclusive page ranges per chapter
+# 1-indexed, inclusive page ranges per chapter (derived from PDF table of contents)
 CHAPTER_RANGES: dict[int, tuple[int, int]] = {
-    2: (43, 80),
-    # Chapters 3-16 populated in Sprint 6
-    3:  (81,  95),
-    4:  (95,  107),
-    5:  (107, 190),
-    6:  (190, 210),
-    7:  (210, 255),
-    8:  (255, 290),
-    9:  (290, 310),
-    10: (310, 390),
-    11: (390, 440),
-    12: (440, 530),
-    13: (530, 610),
-    14: (610, 680),
-    15: (680, 750),
-    16: (750, 780),
+    2:  (43,   80),
+    3:  (81,   94),
+    4:  (95,  106),
+    5:  (107, 152),
+    6:  (153, 162),
+    7:  (163, 194),
+    8:  (195, 226),
+    9:  (227, 233),
+    10: (234, 280),
+    11: (281, 294),
+    12: (295, 314),
+    13: (315, 338),
+    14: (339, 378),
+    15: (379, 388),
+    16: (389, 398),
 }
 
 

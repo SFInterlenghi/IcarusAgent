@@ -1,4 +1,4 @@
-"""Parse raw PDF page text into structured equipment records for Chapter 2."""
+"""Parse raw PDF page text into structured equipment records for Chapters 2–16."""
 
 import re
 from dataclasses import dataclass, field
@@ -36,9 +36,9 @@ class ParseResult:
 # Regex patterns
 # ---------------------------------------------------------------------------
 
-# "Agitators (AG)" — category header with 2-letter code
+# "Agitators (AG)", "Multi-Diameter Towers (DTW)", "Packing, Linings (PAK, LIN)"
 _CAT_RE = re.compile(
-    r"^(?P<name>[A-Z][A-Za-z ,/]+?)\s*\((?P<code>[A-Z]{1,3})\)\s*$"
+    r"^(?P<name>[A-Z][A-Za-z ,/\-]+?)\s*\((?P<codes>[A-Z]{1,3}(?:,\s*[A-Z]{1,3})*)\)\s*$"
 )
 
 # Lines to unconditionally skip (PDF noise)
@@ -48,7 +48,7 @@ _SKIP_RES = [
     re.compile(r"^\*{1,3}$"),                    # lone asterisks (footnote markers)
 ]
 
-# Reference/table section headers — suppress item detection until next category
+# Reference/intro section headers — suppress item detection until next category
 _REF_SECTION_RE = re.compile(
     r"^(?:"
     r"Description of "
@@ -57,6 +57,11 @@ _REF_SECTION_RE = re.compile(
     r"|Impeller Materials?"
     r"|Impeller Type References?"
     r"|Legend for Impellers?"
+    r"|Introduction to "
+    r"|Water Fill Basis"
+    r"|Suggested Lining"
+    r"|Pump Efficiencies"
+    r"|Icarus Supported"
     r")",
     re.IGNORECASE,
 )
@@ -85,13 +90,91 @@ _MATERIAL_RE = re.compile(r"^Materials?\s*:\s*(.*)$", re.IGNORECASE)
 # Any "Parameter name:  optional-inline-value"
 _PARAM_RE = re.compile(r"^([A-Za-z][A-Za-z0-9 ,/()\-\.]+?)\s*:\s*(.*)$")
 
-# Chapter 2 known categories (code → (name, approx_start_page))
+# Chapter 2 known categories kept for backward compatibility with existing tests
 CHAPTER_2_CATEGORIES: dict[str, tuple[str, int]] = {
     "AG": ("Agitators",      44),
     "AT": ("Agitated Tanks", 51),
     "BL": ("Blenders",       68),
     "K":  ("Kneaders",       71),
     "MX": ("Mixers",         72),
+}
+
+# All known equipment category codes across Chapters 2–16.
+# code → (display_name, chapter_number)
+ALL_CATEGORIES: dict[str, tuple[str, int]] = {
+    # Ch.2 — Agitators
+    "AG":  ("Agitators",                              2),
+    "AT":  ("Agitated Tanks",                         2),
+    "BL":  ("Blenders",                               2),
+    "K":   ("Kneaders",                               2),
+    "MX":  ("Mixers",                                 2),
+    # Ch.3 — Compressors
+    "AC":  ("Air Compressors",                        3),
+    "GC":  ("Gas Compressors",                        3),
+    "FN":  ("Fans, Blowers",                          3),
+    # Ch.4 — Drivers
+    "MOT": ("Electrical Motors",                      4),
+    "TUR": ("Turbines",                               4),
+    # Ch.5 — Heat Transfer
+    "HE":  ("Heat Exchangers",                        5),
+    "RB":  ("Reboilers",                              5),
+    "FU":  ("Furnaces, Process Heaters",              5),
+    # Ch.6 — Packing, Linings (dual-code: items registered under PAK)
+    "PAK": ("Packing, Linings",                       6),
+    "LIN": ("Packing, Linings",                       6),
+    # Ch.7 — Pumps
+    "CP":  ("Centrifugal Pumps",                      7),
+    "GP":  ("Gear Pumps",                             7),
+    "P":   ("Piston, Other Positive Displacement Pumps", 7),
+    # Ch.8 — Towers, Columns
+    "DDT": ("Double Diameter Towers",                 8),
+    "TW":  ("Single Diameter Towers",                 8),
+    "DTW": ("Multi-Diameter Towers",                  8),
+    # Ch.9 — Vacuum Systems
+    "C":   ("Condensers",                             9),
+    "EJ":  ("Ejectors",                               9),
+    "VP":  ("Vacuum Pumps",                           9),
+    # Ch.10 — Vessels
+    "HT":  ("Horizontal Tanks",                      10),
+    "VT":  ("Vertical Tanks",                        10),
+    # Ch.11 — Crushers, Mills and Stock Treatment
+    "CR":  ("Crushers",                              11),
+    "FL":  ("Flakers",                               11),
+    "M":   ("Mills",                                 11),
+    "ST":  ("Stock Treatments",                      11),
+    # Ch.12 — Drying Systems
+    "CRY": ("Crystallizers",                         12),
+    "E":   ("Evaporators",                           12),
+    "WFE": ("Wiped Film Evaporators",                12),
+    "AD":  ("Air Dryers",                            12),
+    "D":   ("Dryers",                                12),
+    "DD":  ("Drum Dryers",                           12),
+    "RD":  ("Rotary Dryers",                         12),
+    "TDS": ("Tray Drying Systems",                   12),
+    # Ch.13 — Solids Conveying
+    "CO":  ("Conveyors",                             13),
+    "CE":  ("Cranes",                                13),
+    "EL":  ("Elevators, Lifts",                      13),
+    "FE":  ("Feeders",                               13),
+    "HO":  ("Hoists",                                13),
+    "S":   ("Scales",                                13),
+    # Ch.14 — Separation Equipment
+    "CT":  ("Centrifuges",                           14),
+    "DC":  ("Dust Collectors",                       14),
+    "F":   ("Filters",                               14),
+    "SE":  ("Separation Equipment",                  14),
+    "T":   ("Thickeners",                            14),
+    "VS":  ("Screens",                               14),
+    # Ch.15 — Utility Service Systems
+    "CTW": ("Cooling Towers",                        15),
+    "STB": ("Steam Boilers",                         15),
+    "HU":  ("Heating Units",                         15),
+    "RU":  ("Refrigeration Units",                   15),
+    "EG":  ("Electrical Generators",                 15),
+    "WTS": ("Water Treatment Systems",               15),
+    # Ch.16 — Flares and Stacks
+    "FLR": ("Flares",                                16),
+    "STK": ("Stacks",                                16),
 }
 
 
@@ -189,20 +272,22 @@ def parse_chapter(pages: list[tuple[int, str]], chapter: int = 2) -> ParseResult
             # ---- Category header detection (any state) ----
             cat_m = _CAT_RE.match(line)
             if cat_m:
-                code = cat_m.group("code")
+                # codes field may be "AG" or "PAK, LIN" — use the first code as primary
+                raw_codes = cat_m.group("codes")
+                primary_code = raw_codes.split(",")[0].strip()
                 name = cat_m.group("name").strip()
-                if code in CHAPTER_2_CATEGORIES:
+                if primary_code in ALL_CATEGORIES:
                     _flush_param()
                     _flush_item()
                     in_reference_section = False  # reset on new category
-                    if code not in cat_map:
+                    if primary_code not in cat_map:
                         cat_rec = CategoryRecord(
-                            code=code, name=name,
+                            code=primary_code, name=name,
                             chapter=chapter, page=page_num,
                         )
-                        cat_map[code] = cat_rec
+                        cat_map[primary_code] = cat_rec
                         result.categories.append(cat_rec)
-                    current_cat = cat_map[code]
+                    current_cat = cat_map[primary_code]
                     state = _State.IN_CATEGORY
                     continue
 

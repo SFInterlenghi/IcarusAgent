@@ -54,6 +54,8 @@ def load_parsed(conn: sqlite3.Connection, result) -> None:
 
 def build_db(db_path: Path, chapters: list[int], pdf_path: Path | None = None) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    if db_path.exists():
+        db_path.unlink()  # always start with a clean slate
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
     create_schema(conn)
