@@ -8,7 +8,7 @@ An informational AI assistant for chemical/process engineers that maps Aspen Plu
 - [x] PDF → SQLite ETL for Chapter 2 Agitators (Sprint 1) — 5 categories, 40 items
 - [x] Read-only KB query tools (Sprint 2) — lookup_category, list_items, get_item_detail, search_items
 - [x] Resilient model layer with free-model fallback (Sprint 3) — primary→fallback routing, ADK LiteLlm model object
-- [ ] ADK agent assembly (Sprint 4)
+- [x] ADK agent assembly (Sprint 4) — LlmAgent + 4 KB tools + grounding instructions
 - [ ] Streamlit messenger UI (Sprint 5)
 - [ ] Full Ch.3–16 equipment catalog (Sprint 6)
 
@@ -95,7 +95,7 @@ pytest tests/ -v
 | 1 | ETL: PDF → SQLite (Ch.2) | ✅ Complete |
 | 2 | KB query tools | ✅ Complete |
 | 3 | Resilient model layer | ✅ Complete (live --probe pending your API keys) |
-| 4 | ADK agent assembly | 🔲 Pending |
+| 4 | ADK agent assembly | ✅ Complete (live integration tests require API quota) |
 | 5 | Streamlit messenger UI | 🔲 Pending |
 | 6 | Full Ch.3–16 catalog | 🔲 Pending |
 
