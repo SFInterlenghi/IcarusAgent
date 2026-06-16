@@ -5,7 +5,7 @@ An informational AI assistant for chemical/process engineers that maps Aspen Plu
 ## Current Capabilities
 
 - [x] Project scaffold and config spine (Sprint 0)
-- [ ] PDF → SQLite ETL for Chapter 2 Agitators (Sprint 1)
+- [x] PDF → SQLite ETL for Chapter 2 Agitators (Sprint 1) — 5 categories, 40 items
 - [ ] Read-only KB query tools (Sprint 2)
 - [ ] Resilient model layer with free-model fallback (Sprint 3)
 - [ ] ADK agent assembly (Sprint 4)
@@ -92,7 +92,7 @@ pytest tests/ -v
 | Sprint | Objective | Status |
 |---|---|---|
 | 0 | Scaffolding & config | ✅ Complete |
-| 1 | ETL: PDF → SQLite (Ch.2) | 🔲 Pending |
+| 1 | ETL: PDF → SQLite (Ch.2) | ✅ Complete |
 | 2 | KB query tools | 🔲 Pending |
 | 3 | Resilient model layer | 🔲 Pending |
 | 4 | ADK agent assembly | 🔲 Pending |

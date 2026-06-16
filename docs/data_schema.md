@@ -24,13 +24,12 @@
 ### `design_bound`
 | Column | Type | Notes |
 |---|---|---|
+| `id` | INTEGER PK | Auto-increment |
 | `item_id` | INT FK | → `equipment_item.id` |
-| `parameter` | TEXT | e.g. `volume`, `power`, `pressure` |
-| `min_val` | REAL | Minimum design value |
-| `max_val` | REAL | Maximum design value |
-| `unit` | TEXT | e.g. `m3`, `kW`, `bar` |
+| `parameter` | TEXT | e.g. `Driver Power`, `Liquid Volume` |
+| `raw_text` | TEXT | Full bound text as extracted from PDF, e.g. `0.25 - 3 HP [0.75 - 2.22 KW]` |
 
-> ⚠️ If PDF table layouts resist deterministic extraction, `min_val`/`max_val` may be replaced with a single `raw_text` TEXT column for the PoC. This change requires user approval per the escalation gate in ROADMAP.md.
+> **Sprint 1 decision:** `raw_text` is used instead of `min_val`/`max_val` because PDF bound values are textual and format varies significantly per item (mixed imperial/metric, min/max on separate lines, footnoted values). The `raw_text` is sufficient for the informational chatbot use case. Structured numeric extraction can be layered on in a later sprint if needed.
 
 ### `item_material`
 | Column | Type | Notes |
@@ -46,5 +45,5 @@
 
 | Sprint | Scope | Status |
 |---|---|---|
-| Sprint 1 | Ch.2 (AG, AT, BL, K, MX) | Pending |
+| Sprint 1 | Ch.2 (AG, AT, BL, K, MX) | ✅ Complete — 5 categories, 40 items |
 | Sprint 6 | Ch.3–16 | Pending |
