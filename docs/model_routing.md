@@ -48,3 +48,28 @@ call_model(prompt)
 `model_layer.py` exposes `get_active_model() -> str` for the Streamlit UI badge. Returns:
 - `"primary"` — Llama-3-70B serving
 - `"fallback"` — Gemini Flash serving (shown with ⚠️ in UI)
+
+`reset_active_model()` resets to `"primary"` — used in tests only.
+
+## ADK Model Object
+
+`make_adk_model(prefer_fallback=False)` returns a `google.adk.models.lite_llm.LiteLlm`
+instance for wiring into the ADK agent (Sprint 4).
+
+**Note (ADK v2.2.0):** ADK warns that Gemini models should use its native `Gemini()`
+class rather than `LiteLlm(model="gemini/...")` for better reliability. This will be
+evaluated in Sprint 4 — for the fallback path in `call_model()` (which uses
+`litellm.completion` directly, not the ADK model object) there is no change needed.
+
+## Verification Gate (Sprint 3)
+
+Run `python -m agent.model_layer --probe` with API keys set in `.env` to confirm
+both slugs resolve live. If either returns 404/401, stop and update the slug — do
+not substitute a paid model.
+
+## Status
+
+| Sprint | Gate | Status |
+|---|---|---|
+| Sprint 3 | Mocked fallback tests (12/12) | ✅ Complete |
+| Sprint 3 | Live `--probe` (requires keys in .env) | Pending user run |
