@@ -133,7 +133,7 @@ def _probe_model(slug: str, label: str) -> bool:
         resp = litellm.completion(
             model=slug,
             messages=[{"role": "user", "content": "Reply with the single word: OK"}],
-            max_tokens=8,
+            max_tokens=50,
             temperature=0,
         )
         text = resp.choices[0].message.content.strip()
