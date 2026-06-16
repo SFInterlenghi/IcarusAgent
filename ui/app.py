@@ -54,7 +54,7 @@ else:
 # Helpers
 # ---------------------------------------------------------------------------
 
-_CITATION_RE = re.compile(r"Ch\.\d+/[A-Z]+/[\w ]+")
+_CITATION_RE = re.compile(r"Ch\.\d+/[A-Z]+/[A-Z][A-Z0-9 \-]+")
 
 
 def _extract_citations(text: str) -> list[str]:
@@ -64,22 +64,23 @@ def _extract_citations(text: str) -> list[str]:
 def _call_agent(question: str) -> str:
     from google.genai import types
 
-    runner: "InMemoryRunner" = st.session_state.runner
-    session_id: str = st.session_state.session_id
-
-    message = types.Content(role="user", parts=[types.Part(text=question)])
-    final_text = ""
-    for event in runner.run(
-        user_id="ui-user",
-        session_id=session_id,
-        new_message=message,
-    ):
-        if event.is_final_response() and event.content and event.content.parts:
-            for part in event.content.parts:
-                if part.text:
-                    final_text += part.text
-
-    return final_text or "_(no response — check API key and quota)_"
+    try:
+        runner = st.session_state.runner
+        session_id = st.session_state.session_id
+        message = types.Content(role="user", parts=[types.Part(text=question)])
+        final_text = ""
+        for event in runner.run(
+            user_id="ui-user",
+            session_id=session_id,
+            new_message=message,
+        ):
+            if event.is_final_response() and event.content and event.content.parts:
+                for part in event.content.parts:
+                    if part.text:
+                        final_text += part.text
+        return final_text or "_(no response — check API key and quota)_"
+    except Exception as e:
+        return f"⚠️ Agent error: {type(e).__name__}: {str(e)[:200]}"
 
 
 # ---------------------------------------------------------------------------

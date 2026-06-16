@@ -8,16 +8,11 @@ CLI:
   python -m agent.root_agent --ask "What IEE item maps to an Aspen agitated mixing tank?"
 """
 
-import logging
-import sys
-
 from google.adk.agents import LlmAgent
 
 from agent.model_layer import make_adk_model
 from agent.prompts import SYSTEM_INSTRUCTION
 from config.settings import settings
-
-logger = logging.getLogger(__name__)
 
 _DB = settings.DB_PATH
 
@@ -47,7 +42,7 @@ def list_items(category_code: str) -> list:
     return _fn(category_code, _DB)
 
 
-def get_item_detail(item_symbol: str, category_code: str = "") -> dict:
+def get_item_detail(item_symbol: str, category_code: str | None = None) -> dict:
     """Get full detail for a specific equipment item including design bounds and materials.
 
     Args:
@@ -60,7 +55,7 @@ def get_item_detail(item_symbol: str, category_code: str = "") -> dict:
     Returns an empty dict if not found.
     """
     from agent.tools import get_item_detail as _fn
-    return _fn(item_symbol, category_code or None, _DB)
+    return _fn(item_symbol, category_code, _DB)
 
 
 def search_items(keyword: str) -> list:
@@ -113,6 +108,9 @@ def _main() -> None:
     runner = InMemoryRunner(agent=root_agent, app_name="icarus-cli")
     user_id = "cli-user"
     session_id = "cli-session-1"
+    runner.session_service.create_session_sync(
+        app_name="icarus-cli", user_id=user_id, session_id=session_id
+    )
 
     message = types.Content(
         role="user",

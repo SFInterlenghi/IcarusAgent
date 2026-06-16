@@ -27,10 +27,13 @@ CHAPTER_RANGES: dict[int, tuple[int, int]] = {
 def extract_pages(pdf_path: Path, first: int, last: int) -> list[tuple[int, str]]:
     """Return [(1-indexed page number, page text), ...] for pages first..last inclusive."""
     doc = fitz.open(str(pdf_path))
-    results: list[tuple[int, str]] = []
-    for i in range(first - 1, min(last, doc.page_count)):
-        results.append((i + 1, doc[i].get_text()))
-    return results
+    try:
+        results: list[tuple[int, str]] = []
+        for i in range(first - 1, min(last, doc.page_count)):
+            results.append((i + 1, doc[i].get_text()))
+        return results
+    finally:
+        doc.close()
 
 
 def get_chapter_pages(chapter: int, pdf_path: Path | None = None) -> list[tuple[int, str]]:

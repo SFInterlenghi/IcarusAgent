@@ -108,7 +108,7 @@ def call_model(
         return response.choices[0].message.content
 
 
-def make_adk_model(prefer_fallback: bool = False):
+def make_adk_model(prefer_fallback: bool = False) -> "LiteLlm":
     """Return an ADK LiteLlm model object.
 
     Sprint 4 (root_agent.py) uses this to wire the agent's underlying model.
@@ -139,7 +139,9 @@ def _probe_model(slug: str, label: str) -> bool:
         text = resp.choices[0].message.content.strip()
         print(f"  [{label}] {slug!r}  →  response: {text!r}  ✓")
         return True
-    except Exception as e:
+    except (litellm.AuthenticationError, litellm.NotFoundError,
+            litellm.RateLimitError, litellm.ServiceUnavailableError,
+            litellm.APIConnectionError, Exception) as e:
         print(f"  [{label}] {slug!r}  →  ERROR: {type(e).__name__}: {e}")
         return False
 

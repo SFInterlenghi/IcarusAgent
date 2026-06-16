@@ -46,4 +46,4 @@
 | Sprint | Scope | Status |
 |---|---|---|
 | Sprint 1 | Ch.2 (AG, AT, BL, K, MX) | ✅ Complete — 5 categories, 40 items |
-| Sprint 6 | Ch.3–16 | Pending |
+| Sprint 6 | Ch.3–16 (52 additional categories) | ✅ Complete — 57 categories, 366 items total |

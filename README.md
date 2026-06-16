@@ -49,9 +49,12 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env with your keys:
-#   OPENROUTER_API_KEY — from openrouter.ai (free account)
-#   GOOGLE_API_KEY     — from Google AI Studio (unbilled Pro key)
+# Edit .env — both keys are required for the agent to function:
+#   OPENROUTER_API_KEY — create free account at openrouter.ai, then
+#                        go to Keys → Create Key
+#   GOOGLE_API_KEY     — go to aistudio.google.com → Get API key
+#                        (use a free/unbilled key)
+# Without real keys, the agent will fail on every query.
 ```
 
 ## Environment Variables

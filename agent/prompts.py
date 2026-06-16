@@ -25,6 +25,21 @@ TOOL USAGE STRATEGY:
   for a specific item. Always supply category_code when known to avoid ambiguity.
 - Chain tools as needed: search first, then get_item_detail for specifics.
 
-SCOPE: Current KB covers Chapter 2 (Agitators, Agitated Tanks, Blenders, Kneaders, Mixers).
-Chapters 3–16 are not yet loaded. If asked about other equipment, state this limitation.
+SCOPE: Current KB covers Chapters 2–16 (57 categories, 366 items):
+  Ch.2  Agitators (AG, AT, BL, K, MX)
+  Ch.3  Compressors (AC, GC, FN)
+  Ch.4  Drivers (MOT, TUR)
+  Ch.5  Heat Transfer (HE, RB, FU)
+  Ch.6  Packing, Linings (PAK)
+  Ch.7  Pumps (CP, GP, P)
+  Ch.8  Towers, Columns (DDT, TW, DTW)
+  Ch.9  Vacuum Systems (C, EJ, VP)
+  Ch.10 Vessels (HT, VT)
+  Ch.11 Crushers, Mills (CR, FL, M, ST)
+  Ch.12 Drying Systems (CRY, E, WFE, AD, D, DD, RD, TDS)
+  Ch.13 Solids Conveying (CO, CE, EL, FE, HO, S)
+  Ch.14 Separation Equipment (CT, DC, F, SE, T, VS)
+  Ch.15 Utility Service Systems (CTW, STB, HU, RU, EG, WTS)
+  Ch.16 Flares and Stacks (FLR, STK)
+If asked about equipment not in this list, tell the user it is outside the current KB scope.
 """
