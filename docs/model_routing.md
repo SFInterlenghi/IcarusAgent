@@ -10,8 +10,12 @@ This system must never incur LLM API costs. All models must be free-tier or unbi
 
 | Role | Model | Provider | Cost |
 |---|---|---|---|
-| Primary | `openrouter/meta-llama/llama-3-70b-instruct:free` | OpenRouter | $0 (free tier) |
+| Primary | `openrouter/nex-agi/nex-n2-pro:free` | OpenRouter | $0 (free tier) |
 | Fallback | `gemini/gemini-flash-latest` | Google AI Studio | $0 (unbilled Pro key) |
+
+> Nex-N2-Pro is an agentic MoE model with native **function-calling** support — required
+> because the agent answers exclusively through tool calls. Any substitute primary/fallback
+> model MUST support tool/function calling or the agent will break.
 
 > ⚠️ Exact slugs verified in Sprint 3 `--probe`. If either slug fails, escalate to user — do not substitute a paid model.
 
