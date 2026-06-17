@@ -7,10 +7,17 @@ from pathlib import Path
 # when Streamlit Cloud launches this file as ui/app.py.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import os
 import re
 import uuid
 
 import streamlit as st
+
+# Bridge Streamlit Cloud secrets into env vars so config/settings.py
+# (which uses os.getenv) can see API keys set in the secrets panel.
+for key in ("OPENROUTER_API_KEY", "GOOGLE_API_KEY", "PRIMARY_MODEL", "FALLBACK_MODEL"):
+    if key not in os.environ and key in st.secrets:
+        os.environ[key] = st.secrets[key]
 
 from agent.model_layer import get_active_model
 from agent.root_agent import build_agent
