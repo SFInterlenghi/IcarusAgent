@@ -84,9 +84,10 @@ def test_agent_tool_names():
 def test_agent_instruction_contains_grounding_rules():
     from agent.root_agent import root_agent
     instruction = root_agent.instruction
-    assert "Answer ONLY from" in instruction
+    assert "GROUNDING RULES" in instruction
     assert "Ch." in instruction  # citation format present
-    assert "not in the current KB scope" in instruction
+    assert "NEVER invent" in instruction
+    assert "engineering suggestion" in instruction  # consultative behavior
 
 
 def test_root_agent_singleton_is_llm_agent():
