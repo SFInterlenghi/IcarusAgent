@@ -4,7 +4,9 @@
 # Generated database (rebuildable via ETL)
 *.sqlite
 *.db
-data/icarus_kb.sqlite
+# ...except the production KB, which is committed so the deployed app
+# has a knowledge base without re-running ETL on every cold start.
+!data/icarus_kb.sqlite
 
 # Python
 __pycache__/
