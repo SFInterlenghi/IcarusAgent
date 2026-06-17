@@ -107,13 +107,14 @@ _SEEDS = [
     "List all items in the Agitators category",
 ]
 
+_seed_prompt: str | None = None
+
 if not st.session_state.messages:
     st.markdown("**Try one of these:**")
     cols = st.columns(len(_SEEDS))
     for col, seed in zip(cols, _SEEDS):
         if col.button(seed, use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": seed})
-            st.rerun()
+            _seed_prompt = seed
 
 # ---------------------------------------------------------------------------
 # Chat history
@@ -130,7 +131,9 @@ for msg in st.session_state.messages:
 # Input + response
 # ---------------------------------------------------------------------------
 
-if prompt := st.chat_input("Ask about a block or equipment code…"):
+prompt = st.chat_input("Ask about a block or equipment code…") or _seed_prompt
+
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
