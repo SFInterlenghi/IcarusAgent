@@ -127,39 +127,41 @@ def _call_agent(question: str, status=None) -> str:
         return f"⚠️ Agent error: {type(e).__name__}: {str(e)[:200]}"
 
 
-_CLARIFY_LINE_RE = re.compile(r"^\s*CLARIFY:\s*(.+)$")
-_OPTION_LINE_RE = re.compile(r"^\s*[-*]\s+(.+)$")
+# Matches a CLARIFY block anywhere in the text — even glued mid-line like
+# "...in the CLARIFY format.CLARIFY: Does ...?" — followed by its `- option` lines.
+_CLARIFY_BLOCK_RE = re.compile(
+    r"CLARIFY:[ \t]*(?P<q>[^\n]+)\n(?P<opts>(?:[ \t]*[-*][ \t]+[^\n]+\n?)+)"
+)
+_OPTION_LINE_RE = re.compile(r"[ \t]*[-*][ \t]+(.+)")
 
 
 def _parse_clarify(text: str):
     """Split an assistant reply into (clean_text, [{question, options}, ...]).
 
-    A clarify block is a line `CLARIFY: <q>` followed by one or more `- option` lines.
+    A clarify block is `CLARIFY: <q>` followed by one or more `- option` lines.
+    CLARIFY may appear mid-line (the model sometimes glues it to prose), so we
+    search the whole text rather than matching line starts.
     """
-    lines = text.splitlines()
-    clean: list[str] = []
     questions: list[dict] = []
-    i = 0
-    while i < len(lines):
-        m = _CLARIFY_LINE_RE.match(lines[i])
-        if m:
-            question = m.group(1).strip()
-            opts: list[str] = []
-            i += 1
-            while i < len(lines):
-                om = _OPTION_LINE_RE.match(lines[i])
-                if not om:
-                    break
-                opts.append(om.group(1).strip())
-                i += 1
-            if opts:
-                questions.append({"question": question, "options": opts})
-            else:
-                clean.append(lines[i - 1])  # malformed — keep original line
-            continue
-        clean.append(lines[i])
-        i += 1
-    return "\n".join(clean).strip(), questions
+    spans: list[tuple[int, int]] = []
+    for m in _CLARIFY_BLOCK_RE.finditer(text):
+        opts = [
+            om.group(1).strip()
+            for line in m.group("opts").splitlines()
+            if (om := _OPTION_LINE_RE.match(line))
+        ]
+        if opts:
+            questions.append({"question": m.group("q").strip(), "options": opts})
+            spans.append((m.start(), m.end()))
+
+    # Rebuild clean text by removing the matched clarify spans.
+    clean_parts: list[str] = []
+    last = 0
+    for start, end in spans:
+        clean_parts.append(text[last:start])
+        last = end
+    clean_parts.append(text[last:])
+    return "".join(clean_parts).strip(), questions
 
 
 # ---------------------------------------------------------------------------

@@ -47,6 +47,7 @@ CLARIFY: <one short question>
 Rules:
 - Each option is a few words, mutually exclusive, and decision-relevant.
 - Up to 3 CLARIFY blocks per turn (e.g. agitation? pressure range? batch/continuous?).
+- Each `CLARIFY:` MUST start on its own new line with nothing before it on that line.
 - After the user answers, give the focused recommendation for their specific case.
 
 Example — user asks "Which Icarus item for my reactor?" (ambiguous → clarify ONLY):
