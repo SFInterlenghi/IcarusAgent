@@ -190,6 +190,17 @@ if not st.session_state.messages:
 _clarify_answer: str | None = None
 _last_idx = len(st.session_state.messages) - 1
 
+_OTHER = "✏️ Other (type your own)…"
+_OTHER_PREFIX = "__OTHER__"
+
+
+def _resolved(val: str) -> str:
+    """Resolve a stored selection to its display/answer value."""
+    if isinstance(val, str) and val.startswith(_OTHER_PREFIX):
+        return val[len(_OTHER_PREFIX):].strip()
+    return val or ""
+
+
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if msg["role"] == "assistant":
@@ -210,28 +221,54 @@ for idx, msg in enumerate(st.session_state.messages):
                 selections: dict = st.session_state.setdefault(sel_key, {})
                 for qi, q in enumerate(questions):
                     st.markdown(f"**{q['question']}**")
-                    bcols = st.columns(len(q["options"]))
-                    for oi, opt in enumerate(q["options"]):
-                        chosen = selections.get(qi) == opt
-                        if bcols[oi].button(
+                    stored = selections.get(qi, "")
+                    # Options are stacked vertically (full width) so long labels
+                    # never get squeezed into one-character-per-line columns.
+                    for oi, opt in enumerate(q["options"] + [_OTHER]):
+                        is_other = opt == _OTHER
+                        chosen = (
+                            str(stored).startswith(_OTHER_PREFIX) if is_other
+                            else stored == opt
+                        )
+                        if st.button(
                             f"✓ {opt}" if chosen else opt,
                             key=f"clarify-{idx}-{qi}-{oi}",
                             type="primary" if chosen else "secondary",
                             use_container_width=True,
                         ):
-                            selections[qi] = opt
+                            selections[qi] = _OTHER_PREFIX if is_other else opt
                             st.rerun()
+                    # Free-text box appears when "Other" is selected.
+                    if str(selections.get(qi, "")).startswith(_OTHER_PREFIX):
+                        txt = st.text_input(
+                            "Your answer:", key=f"clarify-other-{idx}-{qi}"
+                        )
+                        selections[qi] = _OTHER_PREFIX + (txt or "")
 
-                all_answered = len(selections) == len(questions)
-                if st.button(
+                answered = sum(1 for qi in range(len(questions)) if _resolved(selections.get(qi, "")))
+                all_answered = answered == len(questions)
+
+                send_col, skip_col = st.columns(2)
+                if send_col.button(
                     "Send answers →",
                     key=f"clarify-send-{idx}",
                     type="primary",
                     disabled=not all_answered,
+                    use_container_width=True,
                 ):
                     _clarify_answer = "\n".join(
-                        f"- {questions[qi]['question']} {selections[qi]}"
+                        f"- {questions[qi]['question']} {_resolved(selections[qi])}"
                         for qi in range(len(questions))
+                    )
+                if skip_col.button(
+                    "Skip — show all options",
+                    key=f"clarify-skip-{idx}",
+                    use_container_width=True,
+                ):
+                    _clarify_answer = (
+                        "Skip the clarifying questions. Just show me all the relevant "
+                        "IEE options for my original request, with their citations and a "
+                        "short guide on how to choose between them."
                     )
         else:
             st.markdown(msg["content"])
