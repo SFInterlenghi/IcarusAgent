@@ -58,11 +58,19 @@ if "runner" not in st.session_state:
 
 st.title("🛰️ IcarusAgent — IEE Equipment Mapper")
 
+from config.settings import settings
+
+
+def _short_model(slug: str) -> str:
+    """Last path segment of a model slug, e.g. 'nemotron-3-ultra-550b-a55b:free'."""
+    return slug.rsplit("/", 1)[-1] if slug else "unknown"
+
+
 active = get_active_model()
 if active == "fallback":
-    st.caption("Model: ⚠️ fallback: Gemini Flash · ● online")
+    st.caption(f"Model: ⚠️ fallback: {_short_model(settings.FALLBACK_MODEL)} · ● online")
 else:
-    st.caption("Model: Llama-3-70B (free) · ● online")
+    st.caption(f"Model: {_short_model(settings.PRIMARY_MODEL)} · ● online")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -75,7 +83,20 @@ def _extract_citations(text: str) -> list[str]:
     return list(dict.fromkeys(_CITATION_RE.findall(text)))
 
 
-def _call_agent(question: str) -> str:
+def _humanize_tool(name: str, args: dict) -> str:
+    """Turn a raw tool call into a friendly progress line for the status box."""
+    if name == "search_items":
+        return f"🔍 Searching the IEE reference for “{args.get('keyword', '')}”…"
+    if name == "list_items":
+        return f"📋 Listing items in category {args.get('category_code', '')}…"
+    if name == "get_item_detail":
+        return f"📐 Reading design bounds for {args.get('item_symbol', '')}…"
+    if name == "lookup_category":
+        return f"🗂️ Looking up category {args.get('code', '')}…"
+    return f"⚙️ Running {name}…"
+
+
+def _call_agent(question: str, status=None) -> str:
     from google.genai import types
 
     try:
@@ -88,13 +109,57 @@ def _call_agent(question: str) -> str:
             session_id=session_id,
             new_message=message,
         ):
-            if event.is_final_response() and event.content and event.content.parts:
-                for part in event.content.parts:
+            content = getattr(event, "content", None)
+            parts = getattr(content, "parts", None) if content else None
+            if parts and status is not None:
+                for part in parts:
+                    fc = getattr(part, "function_call", None)
+                    if fc and getattr(fc, "name", None):
+                        line = _humanize_tool(fc.name, dict(getattr(fc, "args", {}) or {}))
+                        status.update(label=line)
+                        status.write(line)
+            if event.is_final_response() and parts:
+                for part in parts:
                     if part.text:
                         final_text += part.text
         return final_text or "_(no response — check API key and quota)_"
     except Exception as e:
         return f"⚠️ Agent error: {type(e).__name__}: {str(e)[:200]}"
+
+
+_CLARIFY_LINE_RE = re.compile(r"^\s*CLARIFY:\s*(.+)$")
+_OPTION_LINE_RE = re.compile(r"^\s*[-*]\s+(.+)$")
+
+
+def _parse_clarify(text: str):
+    """Split an assistant reply into (clean_text, [{question, options}, ...]).
+
+    A clarify block is a line `CLARIFY: <q>` followed by one or more `- option` lines.
+    """
+    lines = text.splitlines()
+    clean: list[str] = []
+    questions: list[dict] = []
+    i = 0
+    while i < len(lines):
+        m = _CLARIFY_LINE_RE.match(lines[i])
+        if m:
+            question = m.group(1).strip()
+            opts: list[str] = []
+            i += 1
+            while i < len(lines):
+                om = _OPTION_LINE_RE.match(lines[i])
+                if not om:
+                    break
+                opts.append(om.group(1).strip())
+                i += 1
+            if opts:
+                questions.append({"question": question, "options": opts})
+            else:
+                clean.append(lines[i - 1])  # malformed — keep original line
+            continue
+        clean.append(lines[i])
+        i += 1
+    return "\n".join(clean).strip(), questions
 
 
 # ---------------------------------------------------------------------------
@@ -117,21 +182,35 @@ if not st.session_state.messages:
             _seed_prompt = seed
 
 # ---------------------------------------------------------------------------
-# Chat history
+# Chat history (with clarify-question buttons on the latest message)
 # ---------------------------------------------------------------------------
 
-for msg in st.session_state.messages:
+_clarify_answer: str | None = None
+_last_idx = len(st.session_state.messages) - 1
+
+for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
         if msg["role"] == "assistant":
-            for cite in _extract_citations(msg["content"]):
+            clean, questions = _parse_clarify(msg["content"])
+            st.markdown(clean)
+            for cite in _extract_citations(clean):
                 st.caption(f"↳ source: {cite}")
+            # Only the latest assistant message gets interactive buttons.
+            if idx == _last_idx and questions:
+                for qi, q in enumerate(questions):
+                    st.markdown(f"**{q['question']}**")
+                    bcols = st.columns(len(q["options"]))
+                    for oi, opt in enumerate(q["options"]):
+                        if bcols[oi].button(opt, key=f"clarify-{idx}-{qi}-{oi}"):
+                            _clarify_answer = opt
+        else:
+            st.markdown(msg["content"])
 
 # ---------------------------------------------------------------------------
 # Input + response
 # ---------------------------------------------------------------------------
 
-prompt = st.chat_input("Ask about a block or equipment code…") or _seed_prompt
+prompt = st.chat_input("Ask about a block or equipment code…") or _seed_prompt or _clarify_answer
 
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -139,10 +218,12 @@ if prompt:
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Consulting IEE…"):
-            reply = _call_agent(prompt)
-        st.markdown(reply)
-        for cite in _extract_citations(reply):
+        with st.status("Consulting IEE…", expanded=True) as status:
+            reply = _call_agent(prompt, status)
+            status.update(label="Done", state="complete", expanded=False)
+        clean, _ = _parse_clarify(reply)
+        st.markdown(clean)
+        for cite in _extract_citations(clean):
             st.caption(f"↳ source: {cite}")
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
