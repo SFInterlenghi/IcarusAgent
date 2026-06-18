@@ -192,17 +192,45 @@ for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if msg["role"] == "assistant":
             clean, questions = _parse_clarify(msg["content"])
-            st.markdown(clean)
-            for cite in _extract_citations(clean):
-                st.caption(f"↳ source: {cite}")
-            # Only the latest assistant message gets interactive buttons.
+            # When the agent asks clarifying questions, its reply should be the
+            # questions ONLY — any prose before them is leaked reasoning, so we
+            # hide it and show a short lead-in instead.
+            if questions:
+                st.markdown("A couple of quick questions to narrow it down:")
+            else:
+                st.markdown(clean)
+                for cite in _extract_citations(clean):
+                    st.caption(f"↳ source: {cite}")
+
+            # Only the latest assistant message gets interactive controls.
             if idx == _last_idx and questions:
+                sel_key = f"clarify_sel_{idx}"
+                selections: dict = st.session_state.setdefault(sel_key, {})
                 for qi, q in enumerate(questions):
                     st.markdown(f"**{q['question']}**")
                     bcols = st.columns(len(q["options"]))
                     for oi, opt in enumerate(q["options"]):
-                        if bcols[oi].button(opt, key=f"clarify-{idx}-{qi}-{oi}"):
-                            _clarify_answer = opt
+                        chosen = selections.get(qi) == opt
+                        if bcols[oi].button(
+                            f"✓ {opt}" if chosen else opt,
+                            key=f"clarify-{idx}-{qi}-{oi}",
+                            type="primary" if chosen else "secondary",
+                            use_container_width=True,
+                        ):
+                            selections[qi] = opt
+                            st.rerun()
+
+                all_answered = len(selections) == len(questions)
+                if st.button(
+                    "Send answers →",
+                    key=f"clarify-send-{idx}",
+                    type="primary",
+                    disabled=not all_answered,
+                ):
+                    _clarify_answer = "\n".join(
+                        f"- {questions[qi]['question']} {selections[qi]}"
+                        for qi in range(len(questions))
+                    )
         else:
             st.markdown(msg["content"])
 
@@ -221,10 +249,13 @@ if prompt:
         with st.status("Consulting IEE…", expanded=True) as status:
             reply = _call_agent(prompt, status)
             status.update(label="Done", state="complete", expanded=False)
-        clean, _ = _parse_clarify(reply)
-        st.markdown(clean)
-        for cite in _extract_citations(clean):
-            st.caption(f"↳ source: {cite}")
+        clean, questions = _parse_clarify(reply)
+        if questions:
+            st.markdown("A couple of quick questions to narrow it down:")
+        else:
+            st.markdown(clean)
+            for cite in _extract_citations(clean):
+                st.caption(f"↳ source: {cite}")
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
     st.rerun()
